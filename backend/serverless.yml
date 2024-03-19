@@ -6,12 +6,19 @@ provider:
     region: ca-central-1
     architecture: arm64
     runtime: php-83-fpm
+    deploymentBucket:
+        name: elcweb-platform-deployment-${aws:region}
     environment:
         # Symfony environment variables
         APP_ENV: prod
 
 plugins:
     - ./vendor/bref/bref
+    - serverless-prune-versions
+
+custom:
+    prune:
+        automatic: true
 
 functions:
     # This function runs the Symfony website/API
