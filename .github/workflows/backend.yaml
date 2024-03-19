@@ -1,0 +1,47 @@
+name: QA API
+
+on:
+  push:
+    branches:
+      - '*'         # matches every branch that doesn't contain a '/'
+      - '*/*'       # matches every branch containing a single '/'
+      - '**'        # matches every branch
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yaml'
+
+jobs:
+  test-php:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: xdebug
+
+      - name: Run tests
+        run: |
+          composer install
+          bin/phpunit --coverage-clover build/clover.xml --log-junit=build/junit.xml tests
+        shell: bash
+
+      - name: Fix reports paths
+        run: |
+          sed -i 's@'$GITHUB_WORKSPACE'/api@/github/workspace@g' build/clover.xml
+          sed -i 's@'$GITHUB_WORKSPACE'/api/@@g' build/junit.xml
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: api/build
+
