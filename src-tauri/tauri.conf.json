@@ -12,6 +12,9 @@
   "tauri": {
     "allowlist": {
       "all": false,
+      "dialog": {
+        "open": true
+      },
       "shell": {
         "all": false,
         "open": true
@@ -50,6 +53,14 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ]
+    },
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://yulbrew-game-launcher-dev.s3.ca-central-1.amazonaws.com/update.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI5MjFEQkMyMTkxRjczQTIKUldTaWN4OFp3dHNoS1JqeUxUQ2xHeFpKbkw0cGJYejg0NVZZWGZ2cVB2a1U4NklrcWp0Q0dnaXYK"
     }
   }
 }
