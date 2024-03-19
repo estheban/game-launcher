@@ -43,5 +43,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: build
-          path: api/build
+          path: backend/build
 
