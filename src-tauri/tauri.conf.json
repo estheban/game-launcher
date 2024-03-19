@@ -12,6 +12,9 @@
   "tauri": {
     "allowlist": {
       "all": false,
+      "dialog": {
+        "open": true
+      },
       "shell": {
         "all": false,
         "open": true
@@ -24,8 +27,7 @@
         "all": true,
         "request": true,
         "scope": [
-          "https://**/*",
-          "http://**/*"
+          "https://**/*"
         ]
       }
     },
@@ -50,6 +52,14 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ]
+    },
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://3xe7m6bfrl.execute-api.ca-central-1.amazonaws.com/desktop-app/{{target}}/{{arch}}/{{current_version}}"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYzNzY4RDREQTcxQUVEQzcKUldUSDdScW5UWTEyWTdtcTBzVnQ0WkJGQzU1KzFPL0xEV25WUzFHTmN4QU9PazhsNjV5Uk41TksK"
     }
   }
 }

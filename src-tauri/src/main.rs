@@ -15,13 +15,6 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-fn synchronize(app: tauri::AppHandle) {
-    // emits the synchronized event to all windows
-    app.emit_all("synchronized", ());
-}
-
-
-#[tauri::command]
 async fn download_file_to_path(url: String, path: String, app: tauri::AppHandle) -> Result<(), String> {
     // Create directory if it doesn't exist
     // fs::create_dir_all("./download/").expect("Failure creating download folder");
@@ -76,6 +69,7 @@ async fn download_file_to_path(url: String, path: String, app: tauri::AppHandle)
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             greet,
             download_file_to_path,
