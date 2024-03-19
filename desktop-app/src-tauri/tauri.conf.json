@@ -27,8 +27,7 @@
         "all": true,
         "request": true,
         "scope": [
-          "https://**/*",
-          "http://**/*"
+          "https://**/*"
         ]
       }
     },
@@ -57,7 +56,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://yulbrew-game-launcher-dev.s3.ca-central-1.amazonaws.com/update.json"
+        "https://3xe7m6bfrl.execute-api.ca-central-1.amazonaws.com/desktop-app/{{target}}/{{arch}}/{{current_version}}"
       ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI5MjFEQkMyMTkxRjczQTIKUldTaWN4OFp3dHNoS1JqeUxUQ2xHeFpKbkw0cGJYejg0NVZZWGZ2cVB2a1U4NklrcWp0Q0dnaXYK"
