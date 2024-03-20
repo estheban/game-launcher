@@ -1,7 +1,7 @@
 {
   "name": "game-launcher",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,8 @@
     "@tauri-apps/api": "^1",
     "primevue": "^3.50.0",
     "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1",
-    "vue": "^3.3.4"
+    "vue": "^3.3.4",
+    "vue-router": "^4.3.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1",
