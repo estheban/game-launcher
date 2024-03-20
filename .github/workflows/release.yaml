@@ -1,8 +1,10 @@
 name: Build
 on:
-  push:
-    tags:
-      - '*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version'
+        required: true
 
 jobs:
   release:
@@ -11,7 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, windows-latest]
+        platform:
+          - macos-13
+          - windows-latest
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -24,6 +28,10 @@ jobs:
 #        run: |
 #          sudo apt-get update
 #          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev
+
+#      - name: Replace version in Cargo.toml
+#        run: |
+#          sed -i "" "s/__VERSION__/${{ github.event.inputs.version }}/g" src-tauri/Cargo.toml
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
@@ -51,11 +59,10 @@ jobs:
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }} # This only works if your workflow triggers on new tags.
+          tagName: ${{ github.event.inputs.version }} # This only works if your workflow triggers on new tags.
           releaseName: 'Game Launcher v__VERSION__' # tauri-action replaces \_\_VERSION\_\_ with the app version.
           releaseBody: 'See the assets to download and install this version.'
-          releaseDraft: true
-          prerelease: false
-          appVersion: ${{ github.ref_name }}
+          releaseDraft: false
+          prerelease: true
+          appVersion: ${{ github.event.inputs.version }}
           includeUpdaterJson: true
-

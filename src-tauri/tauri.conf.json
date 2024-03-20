@@ -6,8 +6,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "game-launcher",
-    "version": "0.0.0"
+    "productName": "game-launcher"
   },
   "tauri": {
     "allowlist": {
@@ -56,7 +55,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://3xe7m6bfrl.execute-api.ca-central-1.amazonaws.com/desktop-app/{{target}}/{{arch}}/{{current_version}}"
+        "https://github.com/estheban/game-launcher/releases/latest/download/latest.json"
       ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYzNzY4RDREQTcxQUVEQzcKUldUSDdScW5UWTEyWTdtcTBzVnQ0WkJGQzU1KzFPL0xEV25WUzFHTmN4QU9PazhsNjV5Uk41TksK"
