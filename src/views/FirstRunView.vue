@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import {Store} from "tauri-plugin-store-api";
 import {open} from "@tauri-apps/api/dialog";
+import SettingService from "../services/SettingService.ts";
+import router from '../router';
 
-const store = new Store(".settings.dat");
+const SettingRepository = new SettingService();
 
 async function getSettings() {
-  const val = await store.get("storage_folder");
+  const val = await SettingRepository.get("storage_folder");
   console.log(val);
 }
 
@@ -15,9 +16,8 @@ const selectFolder = async () => {
       directory: true,
       multiple: false,
     });
-    await store.set("storage_folder", {value: selectedPath});
-    await store.save();
-    console.log(selectedPath);
+    await SettingRepository.set("storage_folder", selectedPath);
+    await router.push({name: 'home'});
   } catch (error) {
     console.error(error);
   }
