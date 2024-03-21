@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::cmp::min;
+use std::env::consts;
 use std::fs::Permissions;
 use std::os::unix::fs::PermissionsExt;
 use futures::stream::StreamExt;
@@ -18,6 +19,12 @@ use sha2::{Sha256, Digest};
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
+#[tauri::command]
+fn get_platform() -> String {
+    let os = consts::OS;
+    return os.to_string();
 }
 
 async fn compute_sha256(file_path: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -107,6 +114,7 @@ fn main() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             greet,
+            get_platform,
             download_file_to_path,
         ])
         .run(tauri::generate_context!())

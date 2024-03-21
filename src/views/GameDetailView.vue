@@ -19,10 +19,12 @@ const current_manifest = ref<Manifest | null>(null);
 const GameManifestRepository = new GameManifestService();
 const SettingRepository = new SettingService();
 
+const platform = await invoke("get_platform");
+
 async function downloadFile(fileDetail: Chunk, install_directory: string) {
   const saveFolder = await SettingRepository.get("storage_folder")
   // todo: dynamic url and path
-  const downloadUrl = 'https://yulbrew-game-launcher-dev.s3.ca-central-1.amazonaws.com/73dd1271-d2d9-4db6-9618-13ddec1a073b/macos/' + fileDetail.hash;
+  const downloadUrl = 'https://yulbrew-game-launcher-dev.s3.ca-central-1.amazonaws.com/73dd1271-d2d9-4db6-9618-13ddec1a073b/' + platform + '/' + fileDetail.hash;
   const savePath = saveFolder + '/' + install_directory +'/' + fileDetail.name;
 
   console.log(fileDetail);
