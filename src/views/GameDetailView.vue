@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import {ref, onMounted, computed, reactive} from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
-import { listen } from '@tauri-apps/api/event'
+import { listen } from '@tauri-apps/api/event';
+import Button from 'primevue/button';
+import SplitButton from 'primevue/splitbutton';
 import ProgressBar from 'primevue/progressbar';
+// import Skeleton from 'primevue/skeleton';
+import { useToast } from "primevue/usetoast";
+
 import GameManifestService from "../services/GameManifestService.ts";
 import {Manifest, Chunk} from "../types/Manifest.ts";
 import SettingService from "../services/SettingService.ts";
 
+const toast = useToast();
 
 const manifest = ref<Manifest>({
   install_directory: "",
@@ -15,6 +21,7 @@ const manifest = ref<Manifest>({
   files: []
 });
 const current_manifest = ref<Manifest | null>(null);
+const installInProgress = ref(false);
 
 const GameManifestRepository = new GameManifestService();
 const SettingRepository = new SettingService();
@@ -25,7 +32,6 @@ async function downloadFile(fileDetail: Chunk, install_directory: string) {
   const downloadUrl = 'https://yulbrew-game-launcher-dev.s3.ca-central-1.amazonaws.com/73dd1271-d2d9-4db6-9618-13ddec1a073b/macos/' + fileDetail.hash;
   const savePath = saveFolder + '/' + install_directory +'/' + fileDetail.name;
 
-  console.log(fileDetail);
   await invoke("download_file_to_path", {
     url: downloadUrl,
     path: savePath,
@@ -35,6 +41,11 @@ async function downloadFile(fileDetail: Chunk, install_directory: string) {
 }
 
 async function downloadGame() {
+  installInProgress.value = true;
+  Object.keys(fileDownloadProgress).forEach(key => {
+    delete fileDownloadProgress[key];
+  });
+
   const downloadPromises = manifest.value.files.map(file => downloadFile(file, manifest.value.install_directory));
 
   await Promise.all(downloadPromises);
@@ -44,6 +55,10 @@ async function downloadGame() {
 
   await SettingRepository.set("game_manifest", manifest.value);
   console.log('Game manifest has been saved');
+  installInProgress.value = false;
+  await getManifests();
+
+  toast.add({ severity: 'success', summary: 'Game Installed', detail: 'All files have been downloaded', life: 3000 });
 }
 
 async function getManifests() {
@@ -108,6 +123,17 @@ function forceInstall() {
   downloadGame();
 }
 
+async function startGame() {
+  const baseFolder = await SettingRepository.get("storage_folder");
+  // macos
+  const AppPath = baseFolder + '/' + manifest.value.install_directory;
+  toast.add({ severity: 'success', summary: 'Starting Game', detail: AppPath, life: 3000 });
+  await invoke('run_program', {path: AppPath});
+}
+
+const backgroundImage = ref('https://source.unsplash.com/random/800x500');
+// const backgroundImage = ref('https://cdn.cloudflare.steamstatic.com/steam/apps/1149460/library_hero.jpg');
+
 // - Get game version
 // - if no installed game
 // - get game manifest
@@ -119,16 +145,68 @@ function forceInstall() {
 // - enable update button
 // - else
 // - enable play button
+
+const items = [
+  {
+    label: 'Re-Install',
+    icon: 'pi pi-refresh',
+    command: () => {
+      toast.add({ severity: 'warn', summary: 'Updated', detail: 'Force Install Started', life: 3000 });
+      forceInstall();
+    }
+  },
+  {
+    label: 'Uninstall',
+    icon: 'pi pi-times',
+    command: () => {
+      SettingRepository.set("game_manifest", null);
+      getManifests();
+
+      toast.add({ severity: 'warn', summary: 'Game uninstalled', detail: 'Only the manifest is removed, not the files', life: 6000 });
+
+    }
+  }
+];
 </script>
 
 <template>
-  <h2>{{ manifest.name }}</h2>
-  <h3>Total Size: {{ formatBytes(totalSize) }}</h3>
-  <h3>Downloaded Size: {{ formatBytes(downloadedSize) }}</h3>
-  <button @click="getManifests">Refresh</button>
+  <div class="image-container">
+    <img :src="backgroundImage" alt="Background Image" />
+<!--    <Skeleton width="100%" height="200px"></Skeleton>-->
+    <div class="overlay">
+      <h2>{{ manifest.name }}</h2>
+<!--      <p>{{ manifest.description }}</p>-->
+      <Button v-if="canInstall" :disabled="installInProgress" @click="downloadGame()" label="Install" />
 
-  <button v-if="canInstall" @click="downloadGame()">Install</button>
-  <button @click="forceInstall()">Force Install</button>
-
+      <SplitButton v-if="!canInstall" label="Play" icon="pi pi-check" menuButtonIcon="pi pi-cog" :model="items" @click="startGame()" />
+    </div>
+  </div>
+<!--  <h3>Total Size: {{ formatBytes(totalSize) }}</h3>-->
+<!--  <h3>Downloaded Size: {{ formatBytes(downloadedSize) }}</h3>-->
   <ProgressBar v-if="canInstall" :value="progressRatio"></ProgressBar>
 </template>
+
+<style scoped>
+.image-container {
+  position: relative;
+  width: 100%;
+}
+
+.image-container img {
+  width: 100%;
+  object-fit: cover;
+}
+
+.image-container .overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+</style>
