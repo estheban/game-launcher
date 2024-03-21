@@ -44,7 +44,6 @@ async fn download_file_to_path(
     hash: String,
     file_permissions: u32,
     app: tauri::AppHandle) -> Result<(), String> {
-
     fs::create_dir_all(PathBuf::from(path.clone()).parent().unwrap()).await.expect("Failure creating download folder");
 
     let client = Client::new();
@@ -77,8 +76,8 @@ async fn download_file_to_path(
         // file.write_all(&chunk).await.map_err(|_| format!("Failed to write to `{}` file", &path)))?;
         downloaded = min(downloaded + (chunk.len() as u64), total_size);
 
-    //     println!("downloaded => {}", downloaded);
-    //     println!("total_size => {}", total_size);
+        //     println!("downloaded => {}", downloaded);
+        //     println!("total_size => {}", total_size);
 
         let progress = serde_json::json!({
             "downloaded": downloaded,
@@ -102,12 +101,30 @@ async fn download_file_to_path(
     return Ok(());
 }
 
+#[tauri::command]
+fn run_program(path: String) -> Result<(), String> {
+    println!("Starting: {}", path);
+    // let output = std::process::Command::new("open /Users/estheban/git/games/testInstall/SurvivalGame.app")
+    // @todo: support windows
+    // @todo: get the pid so we can update the ui saying the game is running and allow killing the game.
+    std::process::Command::new("open").args(&[path])
+        .spawn()
+        .expect("Failed to execute command");
+
+    // if !output.status.success() {
+    //     return Err(String::from_utf8_lossy(&output.stderr).to_string());
+    // }
+
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             greet,
             download_file_to_path,
+            run_program
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
