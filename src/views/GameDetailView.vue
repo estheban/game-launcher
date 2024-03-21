@@ -26,12 +26,11 @@ const installInProgress = ref(false);
 const GameManifestRepository = new GameManifestService();
 const SettingRepository = new SettingService();
 
-const platform = await invoke("get_platform");
-
 async function downloadFile(fileDetail: Chunk, install_directory: string) {
-  const saveFolder = await SettingRepository.get("storage_folder")
+  const saveFolder = await SettingRepository.get("storage_folder");
+
   // todo: dynamic url and path
-  const downloadUrl = 'https://yulbrew-game-launcher-dev.s3.ca-central-1.amazonaws.com/73dd1271-d2d9-4db6-9618-13ddec1a073b/' + platform + '/' + fileDetail.hash;
+  const downloadUrl = await GameManifestRepository.get_download_prefix() + fileDetail.hash;
   const savePath = saveFolder + '/' + install_directory +'/' + fileDetail.name;
 
   await invoke("download_file_to_path", {
@@ -44,9 +43,6 @@ async function downloadFile(fileDetail: Chunk, install_directory: string) {
 
 async function downloadGame() {
   installInProgress.value = true;
-  Object.keys(fileDownloadProgress).forEach(key => {
-    delete fileDownloadProgress[key];
-  });
 
   const downloadPromises = manifest.value.files.map(file => downloadFile(file, manifest.value.install_directory));
 
@@ -59,6 +55,11 @@ async function downloadGame() {
   console.log('Game manifest has been saved');
   installInProgress.value = false;
   await getManifests();
+
+  // Cleanup
+  Object.keys(fileDownloadProgress).forEach(key => {
+    delete fileDownloadProgress[key];
+  });
 
   toast.add({ severity: 'success', summary: 'Game Installed', detail: 'All files have been downloaded', life: 3000 });
 }
@@ -108,17 +109,17 @@ onMounted(() => {
 //   }
 // });
 
-function formatBytes(bytes: number, decimals = 2) {
-  if (bytes === 0) return '0 Bytes';
-
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
+// function formatBytes(bytes: number, decimals = 2) {
+//   if (bytes === 0) return '0 Bytes';
+//
+//   const k = 1024;
+//   const dm = decimals < 0 ? 0 : decimals;
+//   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+//
+//   const i = Math.floor(Math.log(bytes) / Math.log(k));
+//
+//   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+// }
 
 function forceInstall() {
   current_manifest.value = null;
@@ -127,10 +128,27 @@ function forceInstall() {
 
 async function startGame() {
   const baseFolder = await SettingRepository.get("storage_folder");
-  // macos
-  const AppPath = baseFolder + '/' + manifest.value.install_directory;
-  toast.add({ severity: 'success', summary: 'Starting Game', detail: AppPath, life: 3000 });
-  await invoke('run_program', {path: AppPath});
+  toast.add({ severity: 'success', summary: 'Starting Game', detail: '', life: 3000 });
+  await invoke('run_program', {
+    appName: 'SurvivalGame',
+    baseFolder: baseFolder,
+    installDirectory: manifest.value.install_directory
+  });
+}
+
+async function uninstallGame() {
+  toast.add({ severity: 'warn', summary: 'Uninstalling Game', detail: '', life: 6000 });
+
+  const baseFolder = await SettingRepository.get("storage_folder");
+  await invoke('uninstall_game', {
+    baseFolder: baseFolder,
+    installDirectory: manifest.value.install_directory
+  });
+
+  await SettingRepository.set("game_manifest", null);
+  await getManifests();
+
+  toast.add({ severity: 'success', summary: 'Game Uninstalled', detail: '', life: 6000 });
 }
 
 const backgroundImage = ref('https://source.unsplash.com/random/800x500');
@@ -161,11 +179,7 @@ const items = [
     label: 'Uninstall',
     icon: 'pi pi-times',
     command: () => {
-      SettingRepository.set("game_manifest", null);
-      getManifests();
-
-      toast.add({ severity: 'warn', summary: 'Game uninstalled', detail: 'Only the manifest is removed, not the files', life: 6000 });
-
+      uninstallGame();
     }
   }
 ];
@@ -180,7 +194,7 @@ const items = [
 <!--      <p>{{ manifest.description }}</p>-->
       <Button v-if="canInstall" :disabled="installInProgress" @click="downloadGame()" label="Install" />
 
-      <SplitButton v-if="!canInstall" label="Play" icon="pi pi-check" menuButtonIcon="pi pi-cog" :model="items" @click="startGame()" />
+      <SplitButton severity="success" v-if="!canInstall" label="Play" icon="pi pi-check" menuButtonIcon="pi pi-cog" :model="items" @click="startGame()" />
     </div>
   </div>
 <!--  <h3>Total Size: {{ formatBytes(totalSize) }}</h3>-->

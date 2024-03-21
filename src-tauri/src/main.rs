@@ -3,8 +3,6 @@
 
 use std::cmp::min;
 use std::env::consts;
-use std::fs::Permissions;
-use std::os::unix::fs::PermissionsExt;
 use futures::stream::StreamExt;
 use reqwest::Client;
 use std::path::PathBuf;
@@ -14,6 +12,14 @@ use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio::io::AsyncReadExt;
 use sha2::{Sha256, Digest};
+
+#[cfg(target_family = "unix")]
+use std::fs::Permissions;
+#[cfg(target_family = "unix")]
+use std::os::unix::fs::PermissionsExt;
+
+// #[cfg(target_family = "windows")]
+// use std::os::windows::fs::PermissionsExt;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -44,6 +50,21 @@ async fn compute_sha256(file_path: &str) -> Result<String, Box<dyn std::error::E
     Ok(format!("{:x}", result))
 }
 
+#[cfg(target_family = "unix")]
+fn set_permissions(path: &str, mode: u32) -> std::io::Result<()> {
+    let permissions = Permissions::from_mode(mode);
+    fs::set_permissions(path, permissions)
+}
+
+#[cfg(target_family = "windows")]
+fn set_permissions(path: &str, mode: u32) -> std::io::Result<()> {
+    // On Windows, the `mode` doesn't map directly to permissions as it does on Unix.
+    // You'll need to determine how you want to map or ignore the `mode` argument.
+    // let permissions = Permissions::from_mode(0); // replace 0 with the desired permissions
+    // fs::set_permissions(path, permissions)
+    return std::io::Result::Ok(())
+}
+
 #[tauri::command]
 async fn download_file_to_path(
     url: String,
@@ -70,7 +91,6 @@ async fn download_file_to_path(
         .content_length()
         .ok_or(format!("Failed to get the size of the `{}` file", &url))?;
 
-    // let mut file = File::create(&path);
     let mut file = File::create(&path).await.map_err(|_| format!("Failed to create `{}` file", &path))?;
     // let mut file = File::create(&path);
     //.or(Err(format!("Failed to create `{}` file", &path)))?;
@@ -93,9 +113,16 @@ async fn download_file_to_path(
         app.emit_all("file_download_progress", progress).unwrap();
     }
 
+    // say that we have finish the download
+    let progress = serde_json::json!({
+            "downloaded": total_size,
+            "hash": hash
+        });
+    app.emit_all("file_download_progress", progress).unwrap();
+
     // let permissions = Permissions::from_mode(str::parse::<u32>(&file_permissions).unwrap());
-    let permissions = Permissions::from_mode(file_permissions);
-    fs::set_permissions(path.clone(), permissions).await.expect("Failed to set permissions");
+    // let permissions = Permissions::from_mode(file_permissions);
+    set_permissions(&path, file_permissions).expect("Failed to set permissions");
 
     // File hash check
     let actual_hash = compute_sha256(&path).await.map_err(|_| format!("Failed to compute SHA-256 hash of `{}` file", &path))?;
@@ -109,20 +136,49 @@ async fn download_file_to_path(
 }
 
 #[tauri::command]
-fn run_program(path: String) -> Result<(), String> {
-    println!("Starting: {}", path);
+fn run_program(app_name: String, base_folder: String, install_directory: String) -> Result<(), String> {
+    // println!("Starting: {}", path);
+    #[cfg(target_family = "unix")]
+    let path = format!("{}/{}.app", base_folder, install_directory);
+
+    #[cfg(target_family = "windows")]
+    let path = format!("{}\\{}\\{}.exe", base_folder, install_directory, app_name);
+
     // let output = std::process::Command::new("open /Users/estheban/git/games/testInstall/SurvivalGame.app")
-    // @todo: support windows
     // @todo: get the pid so we can update the ui saying the game is running and allow killing the game.
+    #[cfg(target_family = "unix")]
     std::process::Command::new("open").args(&[path])
         .spawn()
         .expect("Failed to execute command");
 
+    #[cfg(target_family = "windows")]
+    std::process::Command::new(path)
+        .spawn()
+        .expect("Failed to execute command");
     // if !output.status.success() {
     //     return Err(String::from_utf8_lossy(&output.stderr).to_string());
     // }
 
     Ok(())
+}
+
+#[tauri::command]
+async fn uninstall_game(base_folder: String, install_directory: String) -> Result<(), String> {
+    // println!("Starting: {}", path);
+    #[cfg(target_family = "unix")]
+    let path = format!("{}/{}.app", base_folder, install_directory);
+
+    #[cfg(target_family = "windows")]
+    let path = format!("{}\\{}", base_folder, install_directory);
+
+    println!("Removing folder: {}", path);
+    match fs::remove_dir_all(&path).await {
+        Ok(()) => Ok(()),
+        Err(e) => Err(format!("Failed to remove directory: {}", e)),
+    }
+    // fs::remove_dir_all(path);
+
+    // Ok(())
 }
 
 fn main() {
@@ -132,7 +188,8 @@ fn main() {
             greet,
             get_platform,
             download_file_to_path,
-            run_program
+            run_program,
+            uninstall_game
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
