@@ -26,7 +26,8 @@
         "all": true,
         "request": true,
         "scope": [
-          "https://**/*"
+          "https://yulbrew-game-launcher-dev.s3.ca-central-1.amazonaws.com/*",
+          "http://127.0.0.1:8000/*"
         ]
       }
     },

@@ -2,11 +2,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::cmp::min;
+use std::fs::Permissions;
+use std::os::unix::fs::PermissionsExt;
 use futures::stream::StreamExt;
 use reqwest::Client;
+use std::path::PathBuf;
 use tauri::Manager;
+use tokio::fs;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use tokio::io::AsyncReadExt;
+use sha2::{Sha256, Digest};
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -14,12 +20,33 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-#[tauri::command]
-async fn download_file_to_path(url: String, path: String, app: tauri::AppHandle) -> Result<(), String> {
-    // Create directory if it doesn't exist
-    // fs::create_dir_all("./download/").expect("Failure creating download folder");
+async fn compute_sha256(file_path: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let mut file = File::open(file_path).await?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0; 1024];
 
-    // let start_time = Instant::now();
+    loop {
+        let n = file.read(&mut buffer).await?;
+        if n == 0 {
+            break;
+        }
+        hasher.update(&buffer[..n]);
+    }
+
+    let result = hasher.finalize();
+    Ok(format!("{:x}", result))
+}
+
+#[tauri::command]
+async fn download_file_to_path(
+    url: String,
+    path: String,
+    hash: String,
+    file_permissions: u32,
+    app: tauri::AppHandle) -> Result<(), String> {
+
+    fs::create_dir_all(PathBuf::from(path.clone()).parent().unwrap()).await.expect("Failure creating download folder");
+
     let client = Client::new();
     let res = client
         .get(&url)
@@ -31,6 +58,8 @@ async fn download_file_to_path(url: String, path: String, app: tauri::AppHandle)
         .send()
         .await
         .map_err(|_| format!("Failed to parse `{}` file", &url))?;
+
+    // @todo: handle 404 and other errors, if the file don't exist the total_size will fail, this should return a failure to the frontend
     let total_size = res
         .content_length()
         .ok_or(format!("Failed to get the size of the `{}` file", &url))?;
@@ -47,22 +76,28 @@ async fn download_file_to_path(url: String, path: String, app: tauri::AppHandle)
         //.or(Err(format!("Failed to write to `{}` file", &path)))?;
         // file.write_all(&chunk).await.map_err(|_| format!("Failed to write to `{}` file", &path)))?;
         downloaded = min(downloaded + (chunk.len() as u64), total_size);
-    //     // let duration = start_time.elapsed().as_secs_f64();
-    //     // let speed = if duration > 0.0 {
-    //     //     Some(downloaded as f64 / duration / 1024.0 / 1024.0)
-    //     // } else {
-    //     //     None
-    //     // };
-        println!("downloaded => {}", downloaded);
-        println!("total_size => {}", total_size);
+
+    //     println!("downloaded => {}", downloaded);
+    //     println!("total_size => {}", total_size);
 
         let progress = serde_json::json!({
             "downloaded": downloaded,
-            "total_size": total_size
+            "hash": hash
         });
         app.emit_all("file_download_progress", progress).unwrap();
-    //     // println!("speed => {:?}", speed);
     }
+
+    // let permissions = Permissions::from_mode(str::parse::<u32>(&file_permissions).unwrap());
+    let permissions = Permissions::from_mode(file_permissions);
+    fs::set_permissions(path.clone(), permissions).await.expect("Failed to set permissions");
+
+    // File hash check
+    let actual_hash = compute_sha256(&path).await.map_err(|_| format!("Failed to compute SHA-256 hash of `{}` file", &path))?;
+    if actual_hash != hash {
+        println!("Error: SHA-256 hash of `{}` file does not match expected hash", &path);
+        // return Err(format!("SHA-256 hash of `{}` file does not match expected hash", &path));
+    }
+    println!("Config: {} Actual: {}", hash, actual_hash);
 
     return Ok(());
 }
