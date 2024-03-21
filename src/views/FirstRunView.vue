@@ -2,13 +2,10 @@
 import {open} from "@tauri-apps/api/dialog";
 import SettingService from "../services/SettingService.ts";
 import router from '../router';
+import Button from 'primevue/button';
+import Message from 'primevue/message';
 
 const SettingRepository = new SettingService();
-
-async function getSettings() {
-  const val = await SettingRepository.get("storage_folder");
-  console.log(val);
-}
 
 const selectFolder = async () => {
   try {
@@ -26,8 +23,8 @@ const selectFolder = async () => {
 
 <template>
   <div>
-    <h1>First Run</h1>
-    <button @click="getSettings">Get Settings</button>
-    <button @click="selectFolder">Select Folder</button>
+    <h1>Game Launcher</h1>
+    <Message severity="warn" :closable="false">The install folder is not configured. Please select a folder to install games.</Message>
+    <Button @click="selectFolder" label="Select Folder" />
   </div>
 </template>
