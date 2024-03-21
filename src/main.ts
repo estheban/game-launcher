@@ -5,9 +5,9 @@ import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
 
 // Styles
-import 'primevue/resources/primevue.min.css';
-import 'primevue/resources/themes/aura-dark-noir/theme.css';
 import 'primeicons/primeicons.css';
+import "primevue/resources/primevue.min.css";
+import 'primevue/resources/themes/aura-dark-noir/theme.css';
 import "./styles.css";
 
 // VueJs
