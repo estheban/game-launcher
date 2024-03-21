@@ -25,6 +25,7 @@ const settingService = new SettingService();
 router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
     const setting = await settingService.get('storage_folder');
     console.log(setting);
+    console.log(from);
     if (setting === null && to.name !== 'first-run') {
         next({ name: 'first-run' }); // replace 'first-run' with the name of the route you want to redirect to
     } else {
