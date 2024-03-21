@@ -51,13 +51,13 @@ async fn compute_sha256(file_path: &str) -> Result<String, Box<dyn std::error::E
 }
 
 #[cfg(target_family = "unix")]
-fn set_permissions(path: &str, mode: u32) -> std::io::Result<()> {
+async fn set_permissions(path: &str, mode: u32) -> std::io::Result<()> {
     let permissions = Permissions::from_mode(mode);
-    fs::set_permissions(path, permissions)
+    fs::set_permissions(path, permissions).await
 }
 
 #[cfg(target_family = "windows")]
-fn set_permissions(path: &str, mode: u32) -> std::io::Result<()> {
+async fn set_permissions(path: &str, mode: u32) -> std::io::Result<()> {
     // On Windows, the `mode` doesn't map directly to permissions as it does on Unix.
     // You'll need to determine how you want to map or ignore the `mode` argument.
     // let permissions = Permissions::from_mode(0); // replace 0 with the desired permissions
@@ -122,7 +122,7 @@ async fn download_file_to_path(
 
     // let permissions = Permissions::from_mode(str::parse::<u32>(&file_permissions).unwrap());
     // let permissions = Permissions::from_mode(file_permissions);
-    set_permissions(&path, file_permissions).expect("Failed to set permissions");
+    set_permissions(&path, file_permissions).await.expect("Failed to set permissions");
 
     // File hash check
     let actual_hash = compute_sha256(&path).await.map_err(|_| format!("Failed to compute SHA-256 hash of `{}` file", &path))?;
@@ -137,7 +137,8 @@ async fn download_file_to_path(
 
 #[tauri::command]
 fn run_program(app_name: String, base_folder: String, install_directory: String) -> Result<(), String> {
-    // println!("Starting: {}", path);
+    println!("Starting: {}", app_name);
+
     #[cfg(target_family = "unix")]
     let path = format!("{}/{}.app", base_folder, install_directory);
 
