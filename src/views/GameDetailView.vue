@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, onMounted, computed, reactive} from "vue";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
@@ -151,7 +151,7 @@ async function uninstallGame() {
   toast.add({ severity: 'success', summary: 'Game Uninstalled', detail: '', life: 6000 });
 }
 
-const backgroundImage = ref('https://source.unsplash.com/random/800x500');
+const backgroundImage = ref('https://picsum.photos/800/500?random=1');
 // const backgroundImage = ref('https://cdn.cloudflare.steamstatic.com/steam/apps/1149460/library_hero.jpg');
 
 // - Get game version
