@@ -72,7 +72,7 @@ async function getManifests() {
 }
 
 const totalSize = computed(() => {
-  return manifest.value.files.reduce((total, file) => total + file.size, 0);
+  return manifest.value.files.reduce((total: any, file: any) => total + file.size, 0);
 });
 
 const downloadedSize = computed(() => {
