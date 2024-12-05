@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {open} from "@tauri-apps/api/dialog";
+import { open } from '@tauri-apps/plugin-dialog';
 import SettingService from "../services/SettingService.ts";
 import router from '../router';
 import Button from 'primevue/button';

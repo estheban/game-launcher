@@ -1,21 +1,22 @@
 import { createApp } from "vue";
+import App from "./App.vue";
 
 // PrimeVue
-import PrimeVue from 'primevue/config';
+import PrimeVue from "primevue/config";
+import Aura from '@primevue/themes/aura';
 import ToastService from 'primevue/toastservice';
-
-// Styles
 import 'primeicons/primeicons.css';
-import "primevue/resources/primevue.min.css";
-import 'primevue/resources/themes/aura-dark-noir/theme.css';
-import "./styles.css";
 
 // VueJs
-import App from "./App.vue";
 import router from "./router";
 
 const app = createApp(App);
 app.use(router);
-app.use(PrimeVue);
+app.use(PrimeVue, {
+    theme: {
+        preset: Aura
+    }
+});
 app.use(ToastService);
-app.mount("#app")
+
+app.mount("#app");

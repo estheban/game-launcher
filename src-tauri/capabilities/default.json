@@ -1,0 +1,26 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "shell:allow-open",
+    "dialog:default",
+    "store:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://yulbrew-game-launcher-dev.s3.ca-central-1.amazonaws.com/*"
+        },
+        {
+          "url": "http://127.0.0.1:8000/*"
+        }
+      ]
+    },
+    "shell:default"
+  ]
+}
