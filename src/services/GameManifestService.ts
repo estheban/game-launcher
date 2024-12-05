@@ -13,7 +13,6 @@ export default class GameManifestService {
         // const response = await fetch('http://127.0.0.1:8000/games/73dd1271-d2d9-4db6-9618-13ddec1a073b', {
         const response = await fetch(await this.get_download_prefix() + 'manifest.json', {
             method: 'GET',
-            timeout: 10,
             // responseType: ResponseType.JSON,
         });
         console.log(response.status); // e.g. 200

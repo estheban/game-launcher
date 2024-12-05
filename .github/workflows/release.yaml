@@ -45,7 +45,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-          cache: 'npm' # Set this to npm, yarn or pnpm.
+          #cache: 'npm' # Set this to npm, yarn or pnpm.
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Install frontend dependencies
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
@@ -56,8 +60,8 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           tagName: ${{ github.event.inputs.version }} # This only works if your workflow triggers on new tags.
           releaseName: 'Game Launcher v__VERSION__' # tauri-action replaces \_\_VERSION\_\_ with the app version.
